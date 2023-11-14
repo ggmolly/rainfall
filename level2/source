@@ -1,0 +1,17 @@
+#include <stdio.h>
+
+void p(void)
+{
+    unsigned int return_address;
+    char buffer[76];
+
+    fflush(stdout);
+    gets(buffer);
+    if ((return_address & 0xb0000000) == 0xb0000000) {
+        printf("(%p)\n",return_address);
+        exit(1);
+    }
+    puts(buffer);
+    strdup(buffer);
+    return;
+}
