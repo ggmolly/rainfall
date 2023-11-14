@@ -1,5 +1,15 @@
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
+
+void p(char *s1, char *s2)
+{
+    char buff[4104];
+    puts(s2);
+    read(0, buff, 4096);
+    *(strchr(buff, '\n')) = '\0';
+    strncpy(s1, buff, 20);
+}
 
 void pp(char *buff) {
     char s1[20];
@@ -10,15 +20,6 @@ void pp(char *buff) {
     buff[strlen(buff)] = ' ';
     strcat(buff,s2);
     return;
-}
-
-void p(char *s1, char *s2)
-{
-    char buff[4104];
-    puts(s2);
-    read(0, buff, 4096);
-    *(strchr(buff, '\n')) = '\0';
-    strncpy(s1, buff, 20);
 }
 
 int main(void)
