@@ -13,11 +13,10 @@ So we have to find the secret string to get the flag?
 
 Disassembling the binary using `ghidra`, we can see that the binary is doing something like that :
 ```c
-
 int main(int argc, char **argv)
 {
     int i = atoi(argv[1]);
-    if (i == 0x1a7) // 423 in decimal
+    if (i == 423)
     {
         system("/bin/sh");
     }
