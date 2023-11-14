@@ -1,0 +1,12 @@
+int main(int argc, char **argv)
+{
+    int i = atoi(argv[1]);
+    if (i == 423)
+    {
+        system("/bin/sh");
+    }
+    else
+    {
+        puts("No !");
+    }
+}
