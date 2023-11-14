@@ -32,7 +32,7 @@ int main(int argc, char **argv)
 {
     int returnCode;
     // size of the buffer deduced from the sum of both calls to `fread`
-    char buffer[132] = {0}
+    char buffer[132] = {0};
     FILE *pass;
 
     pass = fopen("/home/user/end/.pass","r");
