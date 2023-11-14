@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import subprocess
+import os
+import requests
+from tqdm import tqdm
+
+ISO_PATH = "/tmp/rainfall.iso"
+
+def download_iso():
+    if os.path.isfile(ISO_PATH):
+        print("[+] RainFall.iso already downloaded!")
+        return
+    req = requests.get("https://cdn.intra.42.fr/isos/RainFall.iso", stream=True)
+    size = int(req.headers.get("content-length", 0))
+    # iterate with tqdm
+    with open(ISO_PATH, "wb") as f:
+        for chunk in tqdm(req.iter_content(chunk_size=1024), desc="RainFall.iso", unit="KB", total=int(size / 1024)):
+            if chunk:
+                f.write(chunk)
+
+def start_vm():
+    os.execv("/usr/bin/qemu-system-i386", ["qemu-system-i386", "-m", "2G", "-netdev", "user,id=net0,hostfwd=tcp::4243-:4242", "-device", "e1000,netdev=net0", ISO_PATH])
+
+if __name__ == "__main__":
+    download_iso()
+    start_vm()
