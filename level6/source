@@ -1,15 +1,3 @@
-
-void main(int argc, char** argv)
-{
-    char *__dest;
-    void (**fnPtr)(void);
-    __dest = (char *)malloc(64);
-    *fnPtr = m;
-    strcpy(__dest,*(char **)(argv + 4));
-    (**fnPtr)();
-    return;
-}
-
 void m()
 {
     puts("Nope");
@@ -19,5 +7,16 @@ void m()
 void n(void)
 {
     system("/bin/cat /home/user/level7/.pass");
+    return;
+}
+
+void main(int argc, char** argv)
+{
+    char *__dest;
+    void (**fnPtr)(void);
+    __dest = (char *)malloc(64);
+    *fnPtr = m;
+    strcpy(__dest,*(char **)(argv + 4));
+    (**fnPtr)();
     return;
 }
