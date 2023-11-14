@@ -6,7 +6,7 @@ import sys
 import os
 import pexpect
 
-PORT = 4242
+PORT = 4243
 
 flag_dict = {}
 
