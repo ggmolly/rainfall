@@ -1,0 +1,21 @@
+#include <stdlib.h>
+#include <unistd.h>
+
+int main(int argc, char **argv)
+{
+    int returnCode;
+    char buffer[40];
+    
+    returnCode = atoi(argv[1]);
+    if (returnCode < 10) {
+        memcpy(buffer, argv[2], returnCode * 4);
+        if (returnCode == 1464814662) {
+            execl("/bin/sh","sh",0);
+        }
+        returnCode = 0;
+    }
+    else {
+        returnCode = 1;
+    }
+    return returnCode;
+}
