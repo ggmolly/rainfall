@@ -1,0 +1,32 @@
+#include <cstring>
+#include <cstdlib>
+
+class N {
+    public:
+
+    int n;
+    int (N::*func)(N &);
+    char annotation[100];
+
+    N(int val): n(val) {
+        this->func = &N::operator+;
+    }
+    int operator+(N &rhs) {
+        return this->n + rhs.n;
+    }
+    int operator-(N &rhs) {
+        return this->n - rhs.n;
+    }
+    void setAnnotation(char *s) {
+        memcpy(this->annotation, s, strlen(s));
+    }
+};
+
+int main(int argc, char **argv) {
+    if (argc < 1)
+        _exit(1);
+    N* x = new N(5);
+    N* y = new N(6);
+    x->setAnnotation(argv[1]);
+    return (y->*(y->func))(*x);
+}
