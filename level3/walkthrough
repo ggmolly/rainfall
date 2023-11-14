@@ -13,6 +13,7 @@ void v(void) {
 	}
 	return;
 }
+```
 
 This code might seems normal at a first glance, however `printf` only has one argument. Which means that this code is vulnerable to a format string attack.
 
