@@ -11,25 +11,14 @@ Segmentation fault (core dumped)
 
 The binary segfaults when we pass a string that's long enough. Let's open it with ghidra and see what's going on.
 
-```c++
-
-void main(int param_1,int param_2)
-
-{
-  N *this;
-  undefined4 *this_00;
-  
-  if (param_1 < 2) {
-                    /* WARNING: Subroutine does not return */
-    _exit(1);
-  }
-  this = (N *)operator.new(0x6c);
-  N::N(this,5);
-  this_00 = (undefined4 *)operator.new(0x6c);
-  N::N((N *)this_00,6);
-  N::setAnnotation(this,*(char **)(param_2 + 4));
-  (**(code **)*this_00)(this_00,this);
-  return;
+```cpp
+int main(int argc, char **argv) {
+    if (argc < 1)
+        _exit(1);
+    N* x = new N(5);
+    N* y = new N(6);
+    x->setAnnotation(argv[1]);
+    return (y->*(y->func))(*x);
 }
 ```
 
