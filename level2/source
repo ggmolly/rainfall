@@ -15,3 +15,9 @@ void p(void)
     strdup(buffer);
     return;
 }
+
+void main(void)
+{
+    p();
+    return;
+}
