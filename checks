@@ -101,3 +101,10 @@ if __name__ == "__main__":
                 print(" OK")
             else:
                 print(" KO")
+        print("## end -> ", end="", flush=True)
+        with open("bonus3/flag", "rt") as f:
+            if check_login("end", f.read().strip()):
+                print(" OK")
+            else:
+                print(" KO")
+            
