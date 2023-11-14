@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-int main(void)
+void main(void)
 {
     char buffer[76];
     gets(buffer);
