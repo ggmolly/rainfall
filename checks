@@ -1,0 +1,50 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import sys
+import subprocess
+import shutil
+from glob import glob
+
+def does_compile(source_file: str) -> bool:
+    """
+    Checks whether the passed C source file compiles without errors.
+    """
+    shutil.copy(source_file, "/tmp/tmptmptmptmp.c")
+    # Try to compile the source file
+    try:
+        compiler = "c++" if source_file.startswith("level9") else "gcc"
+        print(f"[{compiler}]", end=" ", flush=True)
+        subprocess.check_output(
+            [compiler, "/tmp/tmptmptmptmp.c","-o", "/tmp/tmptmptmptmp"],
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
+        )
+
+    # If there is an error, return False
+    except subprocess.CalledProcessError:
+        return False
+    return True
+
+if __name__ == "__main__":
+    walkthroughs = sorted(glob("*/walkthrough"))
+    sources = sorted(glob("*/source"))
+    ressources = sorted(glob("*/ressources/*"))
+    print("-" * 10 + " Walkthroughs " + "-" * 10)
+    for walkthrough in walkthroughs:
+        with open(walkthrough, "r") as f:
+            content = f.read().strip()
+        print("## {} | {} bytes / {} lines".format(walkthrough.split("/")[0], len(content), len(content.split("\n"))))
+    print("-" * 10 + " Sources " + "-" * 10)
+    for source in sources:
+        with open(source, "r") as f:
+            content = f.read().strip()
+        print("## {} | {} bytes / {} lines".format(source.split("/")[0], len(content), len(content.split("\n"))))
+    if len(sys.argv) > 1 and any([arg in sys.argv for arg in ["-c", "--compile"]]):
+        print("-" * 10 + " Compile Check " + "-" * 10)
+        for source in sources:
+            print(f"## {source.split('/')[0]} compiling... ", end="", flush=True)
+            if does_compile(source):
+                print("OK".format(source))
+            else:
+                print("KO".format(source))
