@@ -142,13 +142,16 @@ int main(void)
 So, this time the code is a bit more complex. But it seems complex due to the fact that ghidra doesn't know the type of the variables. Let's fix that.
 
 ```c
+char *auth = 0x0;
+char *service = 0x0;
+
 int main(void)
 {
     char buffer [128];
 
-    while (true) {
+    while (1) {
         printf("%p, %p \n",auth,service);
-        if (!fgets(buffer,128,stdin);) {
+        if (!fgets(buffer,128,stdin)) {
             return (0);
         }
         if (strncmp(buffer, "auth ", 5) == 0) {
