@@ -4,7 +4,10 @@
 import sys
 import subprocess
 import shutil
+import pexpect
 from glob import glob
+
+PORT = 4243
 
 def does_compile(source_file: str) -> bool:
     """
@@ -25,6 +28,48 @@ def does_compile(source_file: str) -> bool:
     except subprocess.CalledProcessError:
         return False
     return True
+
+def check_login(username: str, password: str) -> bool:
+    """
+    Uses pexpect to check whether the passed username and password are valid with ssh
+    Calls whoami to check whether the user is logged in
+    """
+    proc = pexpect.spawn("ssh {}@localhost -p {}".format(username, PORT))
+    try:
+        proc.expect("password:")
+        proc.sendline(password)
+        print("connecting...", end="", flush=True)
+        proc.expect("  GCC stack protector support")
+        print(" checksec!", end="", flush=True)
+        proc.sendline("whoami")
+        print(" waiting for whoami", end="", flush=True)
+        proc.expect(username)
+        proc.sendline("exit")
+        proc.wait()
+        return proc.exitstatus == 0
+    except KeyboardInterrupt:
+        proc.close()
+        return False
+    except:
+        return False
+
+flag_dict = {}
+
+# Init flag dict
+for i in range(0, 10): # levelX
+    if i == 0:
+        flag_dict["level0"] = "level0"
+    else:
+        with open("level{}/flag".format(i-1), "rt") as f:
+            flag_dict["level{}".format(i)] = f.read().strip()
+
+for i in range(0, 4): # bonusX
+    if i == 0:
+        with open("level9/flag", "rt") as f:
+            flag_dict["bonus0"] = f.read().strip()
+    else:
+        with open("bonus{}/flag".format(i-1), "rt") as f:
+            flag_dict["bonus{}".format(i)] = f.read().strip()
 
 if __name__ == "__main__":
     walkthroughs = sorted(glob("*/walkthrough"))
@@ -48,3 +93,11 @@ if __name__ == "__main__":
                 print("OK".format(source))
             else:
                 print("KO".format(source))
+    if len(sys.argv) > 1 and any([arg in sys.argv for arg in ["-f", "--flags"]]):
+        print("-" * 10 + " Flags Check " + "-" * 10)
+        for username, password in flag_dict.items():
+            print(f"## {username} -> ", end="", flush=True)
+            if check_login(username, password.strip()):
+                print(" OK")
+            else:
+                print(" KO")
